@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8.5-GTNH",
+  "package": "tech.harrynull.universal_exporter.mixins",
+  "refmap": "mixins.universal_exporter.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "BasicMachineMixin",
+    "MachineMixin"
+  ],
+  "client": [],
+  "server": [
+  ]
+}
