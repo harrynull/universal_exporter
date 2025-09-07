@@ -7,6 +7,7 @@ import com.cleanroommc.modularui.factory.GuiData
 import com.cleanroommc.modularui.screen.ModularPanel
 import com.cleanroommc.modularui.screen.UISettings
 import com.cleanroommc.modularui.utils.Alignment
+import com.cleanroommc.modularui.utils.Color
 import com.cleanroommc.modularui.value.sync.PanelSyncManager
 import com.cleanroommc.modularui.value.sync.SyncHandler
 import com.cleanroommc.modularui.widgets.ButtonWidget
@@ -16,6 +17,7 @@ import com.cleanroommc.modularui.widgets.layout.Flow
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.network.PacketBuffer
 import net.minecraft.util.EnumChatFormatting
+import tech.harrynull.universal_exporter.data.MetricType
 import tech.harrynull.universal_exporter.data.TrackedMetric
 import tech.harrynull.universal_exporter.data.TrackedMetrics
 import kotlin.uuid.ExperimentalUuidApi
@@ -69,7 +71,25 @@ class ListAllUI : IGuiHolder<GuiData> {
                                     TextWidget(metric.value)
                                 )
                                 .child(
-                                    TextWidget("${metric.labels}")
+                                    Flow.row().child(
+                                        TextWidget("${metric.labels}")
+                                    ).also {
+                                        if (!TrackedMetrics.isMetricActive(metric)) {
+                                            it.child(
+                                                TextWidget(if (metric.type == MetricType.COUNTER) "Inactive" else "Invalid")
+                                                    .alignX(Alignment.CenterRight)
+                                                    .paddingRight(60)
+                                                    .color(if (metric.type == MetricType.COUNTER) Color.GREY.main else Color.ORANGE.main)
+                                                    .tooltip { tooltip ->
+                                                        val lastUpdated = TrackedMetrics.lastUpdated(metric)
+                                                        tooltip
+                                                            .add("Last Updated $lastUpdated")
+                                                            .newLine()
+                                                            .buildTooltip()
+                                                    }
+                                            )
+                                        }
+                                    }
                                 )
                                 .child(
                                     ButtonWidget().overlay(IKey.str("Delete")).size(60, 15)

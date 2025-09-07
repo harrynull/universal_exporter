@@ -2,6 +2,7 @@ package tech.harrynull.universal_exporter.data
 
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.world.WorldSavedData
+import java.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -35,7 +36,7 @@ data class TrackedMetric @OptIn(ExperimentalUuidApi::class) constructor(
     val name: String,
     val value: String,
     val uuid: Uuid = Uuid.random(),
-    val labels: Map<String, String> = emptyMap()
+    val labels: Map<String, String> = emptyMap(),
 ) {
     constructor(nbt: NBTTagCompound) : this(
         nbt.getInteger("x"),
@@ -110,5 +111,18 @@ class TrackedMetrics : WorldSavedData {
                 world.perWorldStorage.setData("tracked_metrics", it)
             }
         }
+
+        private val metricLastUpdated = mutableMapOf<Uuid, Instant>()
+        fun setMetricActive(metric: TrackedMetric) {
+            metricLastUpdated[metric.uuid] = Instant.now()
+        }
+
+        fun isMetricActive(metric: TrackedMetric): Boolean {
+            val lastUpdated = metricLastUpdated[metric.uuid] ?: return false
+            return Instant.now().epochSecond - lastUpdated.epochSecond < 60
+        }
+
+        fun lastUpdated(metric: TrackedMetric) = metricLastUpdated[metric.uuid]
     }
+
 }

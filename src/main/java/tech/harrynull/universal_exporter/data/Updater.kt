@@ -21,6 +21,7 @@ fun updateCounter(world: World, x: Int, y: Int, z: Int, type: String, amount: Do
             .register()
     }
     counter.labelValues(*metric.labels.values.toTypedArray()).inc(amount)
+    TrackedMetrics.setMetricActive(metric)
 }
 
 fun updateMetrics(world: World) {
@@ -111,7 +112,10 @@ fun updateMetrics(world: World) {
                 }
             }
 
-            else -> {}
+            MetricType.COUNTER -> {
+                continue
+            }
         }
+        TrackedMetrics.setMetricActive(metric)
     }
 }
