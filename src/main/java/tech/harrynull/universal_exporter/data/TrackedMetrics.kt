@@ -2,7 +2,9 @@ package tech.harrynull.universal_exporter.data
 
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.world.WorldSavedData
+import tech.harrynull.universal_exporter.Config
 import java.time.Instant
+import kotlin.math.min
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -119,7 +121,9 @@ class TrackedMetrics : WorldSavedData {
 
         fun isMetricActive(metric: TrackedMetric): Boolean {
             val lastUpdated = metricLastUpdated[metric.uuid] ?: return false
-            return Instant.now().epochSecond - lastUpdated.epochSecond < 60
+            return Instant.now().epochSecond - lastUpdated.epochSecond < (
+                if (metric.type == MetricType.COUNTER) 60 else min(2, Config.updateIntervalTicks / 20 * 2)
+                )
         }
 
         fun lastUpdated(metric: TrackedMetric) = metricLastUpdated[metric.uuid]

@@ -40,9 +40,10 @@ class UniversalExporter {
         proxy!!.init(event)
 
         if (httpServer == null) {
-            println("Starting HTTP server on port 9400")
+            println("Starting HTTP server on ${Config.host}:${Config.port}")
             httpServer = HTTPServer.builder()
-                .port(9400)
+                .hostname(Config.host)
+                .port(Config.port)
                 .buildAndStart()
         }
     }
@@ -71,12 +72,10 @@ class UniversalExporter {
     }
 
     class ServerTickHandler {
-        private val updateInterval = 20 * 5 // 5 seconds at 20 ticks per second
-
         @SubscribeEvent
         fun onWorldTick(event: WorldTickEvent) {
             if (event.phase == TickEvent.Phase.END && event.side == Side.SERVER) {
-                if (event.world.worldInfo.worldTotalTime % updateInterval != 0L) {
+                if (event.world.worldInfo.worldTotalTime % Config.updateIntervalTicks != 0L) {
                     return
                 }
                 updateMetrics(world = event.world)
