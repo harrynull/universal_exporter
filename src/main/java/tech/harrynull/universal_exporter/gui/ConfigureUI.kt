@@ -1,10 +1,12 @@
 package tech.harrynull.universal_exporter.gui
 
 import com.cleanroommc.modularui.api.IGuiHolder
+import com.cleanroommc.modularui.api.ITheme
 import com.cleanroommc.modularui.api.drawable.IKey
 import com.cleanroommc.modularui.api.widget.IWidget
 import com.cleanroommc.modularui.screen.ModularPanel
 import com.cleanroommc.modularui.screen.UISettings
+import com.cleanroommc.modularui.theme.WidgetTheme
 import com.cleanroommc.modularui.utils.Alignment
 import com.cleanroommc.modularui.utils.Color
 import com.cleanroommc.modularui.value.sync.BooleanSyncValue
@@ -20,8 +22,13 @@ import tech.harrynull.universal_exporter.data.*
 import java.lang.reflect.Modifier
 import kotlin.uuid.ExperimentalUuidApi
 
-
 class MyList : ListWidget<IWidget, MyList>()
+
+class ClickableWidget<W : ClickableWidget<W>> : ButtonWidget<W>() {
+    override fun getWidgetThemeInternal(theme: ITheme): WidgetTheme? {
+        return theme.fallback
+    }
+}
 
 class ConfigureUI : IGuiHolder<ConfigureUIData> {
     private enum class SyncIDs(val id: Int) {
@@ -32,7 +39,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
         INIT_RESULTS(4),
     }
 
-    lateinit var syncHandler: VariableHintSyncManager
+    private lateinit var syncHandler: VariableHintSyncManager
     private var searchText = ""
     private var trigger = ""
     private var possibleTriggers = listOf<String>()
@@ -40,7 +47,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
     private var selectedType = MetricType.GAUGE
     private var labelString = ""
     private var pagedWidgetController = PagedWidget.Controller()
-    lateinit var myList: MyList
+    private lateinit var myList: MyList
 
     fun buildTypeSpecificSettings(): PagedWidget<*> = PagedWidget()
         .addPage(
@@ -53,6 +60,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
                         .child(
                             TextFieldWidget().value(
                                 StringSyncValue(
+                                    // client getter
                                     { searchText },
                                     { newSearchText ->
                                         searchText = newSearchText
@@ -85,7 +93,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
                     .widthRel(1.0f)
             )
         )
-        .addPage(TextWidget("AE items and fluids will be exported"))
+        .addPage(TextWidget("AE items, fluids and CPU will be exported"))
         .controller(pagedWidgetController)
 
     override fun buildUI(data: ConfigureUIData, syncManager: PanelSyncManager, settings: UISettings): ModularPanel {
@@ -163,6 +171,25 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
         return panel
     }
 
+    data class FieldPreviewItem(val fullyQualifiedName: String, val typeName: String, val value: Any?) {
+        val stringValue: String
+            get() {
+                if (value == null) return "<null>"
+                if (value is Number || value is Boolean) return value.toString()
+                return "..."
+            }
+        val shouldHide: Boolean get() = value is String
+        val relativeOrder: Int
+            get() =
+                when (value) {
+                    null -> 10
+                    is Number -> 1
+                    is Boolean -> 2
+                    else -> 5
+                }
+
+    }
+
     @OptIn(ExperimentalUuidApi::class)
     inner class VariableHintSyncManager(private val x: Int, private val y: Int, private val z: Int) : SyncHandler() {
         override fun readOnClient(id: Int, buf: PacketBuffer) {
@@ -179,16 +206,24 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
                         val type = parts[1]
                         val value = parts[2]
                         myList.child(
-                            Flow.row()
-                                .child(TextWidget(name))
+                            ClickableWidget()
                                 .child(
                                     Flow.row()
-                                        .child(TextWidget(type).color(Color.GREY.main).paddingRight(5))
-                                        .child(TextWidget(value).color(Color.LIGHT_BLUE.main))
-                                        .anchor(Alignment.CenterRight)
-                                        .mainAxisAlignment(Alignment.MainAxis.END)
-
+                                        .child(TextWidget(name))
+                                        .child(
+                                            Flow.row()
+                                                .child(TextWidget(type).color(Color.GREY.main).paddingRight(5))
+                                                .child(TextWidget(value).color(Color.LIGHT_BLUE.main))
+                                                .anchor(Alignment.CenterRight)
+                                                .mainAxisAlignment(Alignment.MainAxis.END)
+                                        )
+                                        .widthRel(1.0f)
+                                        .height(10)
                                 )
+                                .onMouseReleased {
+                                    syncHandler.syncToServer(SyncIDs.SEARCH_TEXT.id) { it.writeStringToBuffer(name) }
+                                    true
+                                }
                                 .widthRel(1.0f)
                                 .height(10)
                         )
@@ -202,8 +237,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
             }
         }
 
-
-        fun listCandidates(obj: Any?, searchText: String, prefix: String): List<String> {
+        fun listCandidates(obj: Any?, searchText: String, prefix: String): List<FieldPreviewItem> {
             if (obj == null) return emptyList()
 
             val allFields = getAllFieldsIncludingInherited(obj.javaClass)
@@ -219,7 +253,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
                 return listCandidates(
                     field ?: return emptyList(),
                     searchText.substringAfter("."),
-                    "$prefix${firstPart}."
+                    "$prefix${firstPart}.",
                 )
             }
 
@@ -231,33 +265,37 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
                     ))
             }.map { it.isAccessible = true; it }
 
-            return matchingFields.map { field ->
-                val value = (field.get(obj) ?: "<null>").takeIf {
-                    it is Number || it is Boolean
-                }?.toString() ?: "..."
-                "${prefix}${field.name},${field.type.simpleName}" to value
-            }.sortedBy { (_, value) ->
-                if (value == "<null>") 10
-                else if (value.firstOrNull()?.isDigit() == true || value.firstOrNull() == '-') 1
-                else if (value == "true" || value == "false") 2
-                else 5
-            }.map { (key, value) ->
-                "$key,$value".take(128)
-            }
+            return matchingFields
+                .map { field ->
+                    FieldPreviewItem("${prefix}${field.name}", field.type.simpleName, field.get(obj))
+                }
+                .filterNot { it.shouldHide }
+                .sortedBy { it.relativeOrder }
         }
 
         override fun readOnServer(id: Int, buf: PacketBuffer) {
             when (id) {
                 SyncIDs.SEARCH_TEXT.id -> {
                     val searchText = buf.readStringFromBuffer(64)
+                    this@ConfigureUI.searchText = searchText
                     var obj = syncManager.player.entityWorld.getTileEntity(x, y, z) as Any?
                     if (obj != null && obj is BaseMetaTileEntity) {
                         obj = obj.metaTileEntity as Any
                     }
-                    val matchingFields = listCandidates(obj, searchText, "")
+                    val history = TrackedMetrics.get(syncManager.player.entityWorld).getMetrics()
+                        .filter { it.type == MetricType.GAUGE }
+                        .map { it.value }
+                        .toSet()
+                        .map { it to accessObject(obj, it) }
+                        .filter { it.second != null }
+                        .map { FieldPreviewItem(it.first, "[used]", it.second) }
+                    val matchingFields =
+                        (history + listCandidates(obj, searchText, "")).distinctBy { it.fullyQualifiedName }
                     syncToClient(SyncIDs.SEARCH_RESULTS.id) { buffer ->
                         buffer.writeInt(matchingFields.size)
-                        matchingFields.forEach { buffer.writeStringToBuffer(it) }
+                        matchingFields
+                            .map { "${it.fullyQualifiedName},${it.typeName},${it.stringValue}" }
+                            .forEach { buffer.writeStringToBuffer(it.take(128)) }
                     }
                 }
 

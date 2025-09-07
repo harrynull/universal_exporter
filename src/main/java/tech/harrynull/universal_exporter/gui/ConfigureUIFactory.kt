@@ -19,7 +19,7 @@ class ConfigureUIFactory(name: String) : AbstractUIFactory<ConfigureUIData>(name
 
     fun open(player: EntityPlayerMP, x: Int, y: Int, z: Int) {
         val tile = player.entityWorld.getTileEntity(x, y, z)
-        val aeEnabled = tile is IGridProxyable
+        val aeEnabled = tile is IGridProxyable && tile.proxy != null
         GuiManager.open(this, ConfigureUIData(player, x, y, z, aeEnabled), player)
     }
 

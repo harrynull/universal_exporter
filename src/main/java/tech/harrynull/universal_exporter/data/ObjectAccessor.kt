@@ -32,7 +32,7 @@ fun accessObject(obj: Any?, accessor: String): Int? {
         if (acc == null) return@fold null
         val partNumeric = part.toIntOrNull()
         if (partNumeric == null) {
-            (getAllFieldsIncludingInherited(obj.javaClass).singleOrNull { it.name == part })
+            (getAllFieldsIncludingInherited(acc.javaClass).singleOrNull { it.name == part })
                 ?.also { it.isAccessible = true }
                 ?.get(acc)
         } else {
