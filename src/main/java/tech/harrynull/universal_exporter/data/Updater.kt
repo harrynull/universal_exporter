@@ -42,6 +42,7 @@ fun updateMetrics(world: World) {
                             }"
                         )
                         .labelNames(
+                            "pos",
                             *(sameNameMetrics
                                 .flatMap { it.labels.keys }
                                 .toSet()
@@ -50,7 +51,8 @@ fun updateMetrics(world: World) {
                         )
                         .register()
                 }
-                gauge.labelValues(*metric.labels.values.toTypedArray()).set(value.toDouble())
+                gauge.labelValues("${metric.x},${metric.y},${metric.z}", *metric.labels.values.toTypedArray())
+                    .set(value.toDouble())
             }
 
             MetricType.AE -> {
