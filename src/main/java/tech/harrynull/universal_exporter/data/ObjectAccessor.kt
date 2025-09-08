@@ -26,7 +26,7 @@ fun getAllFieldsIncludingInherited(type: Class<*>?): MutableList<Field> {
     return fields
 }
 
-fun accessObject(obj: Any?, accessor: String): Int? {
+fun accessObject(obj: Any?, accessor: String): Double? {
     if (obj == null) return null
     val accessedObject = accessor.split(".").fold(obj) { acc: Any?, part ->
         if (acc == null) return@fold null
@@ -40,8 +40,8 @@ fun accessObject(obj: Any?, accessor: String): Int? {
         }
     }
     return when (accessedObject) {
-        is Number -> accessedObject.toInt()
-        is Boolean -> if (accessedObject) 1 else 0
+        is Number -> accessedObject.toDouble()
+        is Boolean -> if (accessedObject) 1.0 else 0.0
         else -> null
     }
 }

@@ -52,7 +52,7 @@ fun updateMetrics(world: World) {
                         .register()
                 }
                 gauge.labelValues("${metric.x},${metric.y},${metric.z}", *metric.labels.values.toTypedArray())
-                    .set(value.toDouble())
+                    .set(value)
             }
 
             MetricType.AE -> {
