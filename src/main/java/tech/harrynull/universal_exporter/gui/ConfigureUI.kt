@@ -20,6 +20,7 @@ import gregtech.api.metatileentity.BaseMetaTileEntity
 import net.minecraft.network.PacketBuffer
 import tech.harrynull.universal_exporter.data.*
 import java.lang.reflect.Modifier
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.uuid.ExperimentalUuidApi
 
 class MyList : ListWidget<IWidget, MyList>()
@@ -48,6 +49,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
     private var labelString = ""
     private var pagedWidgetController = PagedWidget.Controller()
     private lateinit var myList: MyList
+    private val searchResultUpdateLock = ReentrantLock()
 
     fun buildTypeSpecificSettings(): PagedWidget<*> = PagedWidget()
         .addPage(
@@ -220,9 +222,10 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
                                         .widthRel(1.0f)
                                         .height(10)
                                 )
-                                .onMouseReleased {
+                                .onMouseReleased { mouseButton ->
+                                    if (mouseButton != 0) return@onMouseReleased false
                                     syncHandler.syncToServer(SyncIDs.SEARCH_TEXT.id) { it.writeStringToBuffer(name) }
-                                    true
+                                    false
                                 }
                                 .widthRel(1.0f)
                                 .height(10)
