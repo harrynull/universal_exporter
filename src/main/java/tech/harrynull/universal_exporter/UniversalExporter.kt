@@ -1,5 +1,6 @@
 package tech.harrynull.universal_exporter
 
+import com.cleanroommc.modularui.factory.GuiManager
 import cpw.mods.fml.common.FMLCommonHandler
 import cpw.mods.fml.common.Mod
 import cpw.mods.fml.common.SidedProxy
@@ -16,13 +17,15 @@ import io.prometheus.metrics.exporter.httpserver.HTTPServer
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import tech.harrynull.universal_exporter.data.updateMetrics
+import tech.harrynull.universal_exporter.gui.ConfigureUIFactory
+import tech.harrynull.universal_exporter.gui.ListAllUIFactory
 import tech.harrynull.universal_exporter.items.DataWand
 
 @Mod(
     modid = UniversalExporter.MODID,
     version = Tags.VERSION,
     name = "UniversalExporter",
-    acceptedMinecraftVersions = "[1.7.10]"
+    acceptedMinecraftVersions = "[1.7.10]",
 )
 class UniversalExporter {
     private var httpServer: HTTPServer? = null
@@ -32,6 +35,8 @@ class UniversalExporter {
     fun preInit(event: FMLPreInitializationEvent) {
         proxy!!.preInit(event)
         GameRegistry.registerItem(DataWand(), "data_wand")
+        GuiManager.registerFactory(ConfigureUIFactory.INSTANCE)
+        GuiManager.registerFactory(ListAllUIFactory.INSTANCE)
         FMLCommonHandler.instance().bus().register(ServerTickHandler())
     }
 

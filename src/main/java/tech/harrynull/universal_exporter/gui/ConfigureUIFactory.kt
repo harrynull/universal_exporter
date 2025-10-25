@@ -9,10 +9,6 @@ import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.network.PacketBuffer
 
 class ConfigureUIFactory(name: String) : AbstractUIFactory<ConfigureUIData>(name) {
-    init {
-        GuiManager.registerFactory(this)
-    }
-
     override fun getGuiHolder(data: ConfigureUIData): IGuiHolder<ConfigureUIData> {
         return ConfigureUI()
     }
@@ -36,6 +32,6 @@ class ConfigureUIFactory(name: String) : AbstractUIFactory<ConfigureUIData>(name
 
     companion object {
         @JvmField
-        val INSTANCE: ConfigureUIFactory = ConfigureUIFactory("configure_ui")
+        val INSTANCE: ConfigureUIFactory = ConfigureUIFactory("ue:configure_ui")
     }
 }

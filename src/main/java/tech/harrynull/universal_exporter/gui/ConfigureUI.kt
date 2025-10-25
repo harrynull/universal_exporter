@@ -66,9 +66,12 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
                                     { searchText },
                                     { newSearchText ->
                                         searchText = newSearchText
-                                        syncHandler.syncToServer(SyncIDs.SEARCH_TEXT.id) {
-                                            it.writeStringToBuffer(newSearchText)
+                                        if (syncHandler.syncManager.isClient) {
+                                            syncHandler.syncToServer(SyncIDs.SEARCH_TEXT.id) {
+                                                it.writeStringToBuffer(newSearchText)
+                                            }
                                         }
+
                                     })
                             ).width(200).height(10)
                         ).height(20)
@@ -166,7 +169,7 @@ class ConfigureUI : IGuiHolder<ConfigureUIData> {
         ).padding(10)
         syncManager.syncValue("variable_hints", syncHandler)
         syncManager.addOpenListener { player ->
-            if (!player.entityWorld.isRemote) {
+            if (player.entityWorld.isRemote) {
                 syncHandler.syncToServer(SyncIDs.INIT.id)
             }
         }

@@ -9,10 +9,6 @@ import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.network.PacketBuffer
 
 class ListAllUIFactory(name: String) : AbstractUIFactory<GuiData>(name) {
-    init {
-        GuiManager.registerFactory(this)
-    }
-
     override fun getGuiHolder(data: GuiData): IGuiHolder<GuiData> {
         return ListAllUI()
     }
@@ -30,6 +26,6 @@ class ListAllUIFactory(name: String) : AbstractUIFactory<GuiData>(name) {
 
     companion object {
         @JvmField
-        val INSTANCE: ListAllUIFactory = ListAllUIFactory("list_ui_all_metrics")
+        val INSTANCE: ListAllUIFactory = ListAllUIFactory("ue:list_ui")
     }
 }

@@ -45,7 +45,7 @@ class ListAllUI : IGuiHolder<GuiData> {
         ).padding(10)
         syncManager.syncValue("sync", syncHandler)
         syncManager.addOpenListener { player ->
-            if (!player.entityWorld.isRemote) {
+            if (player.entityWorld.isRemote) {
                 syncHandler.syncToServer(SyncIDs.LIST_ALL.id)
             }
         }
