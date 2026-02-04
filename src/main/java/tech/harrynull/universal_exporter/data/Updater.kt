@@ -1,6 +1,7 @@
 package tech.harrynull.universal_exporter.data
 
 import appeng.me.helpers.IGridProxyable
+import gregtech.common.misc.GlobalVariableStorage.GlobalEnergy
 import io.prometheus.metrics.core.metrics.Counter
 import io.prometheus.metrics.core.metrics.Gauge
 import net.minecraft.world.World
@@ -8,6 +9,10 @@ import tech.harrynull.universal_exporter.data.MetricType.GAUGE
 
 private val registeredCounters = mutableMapOf<String, Counter>()
 private val registeredGauges = mutableMapOf<String, Gauge>()
+private val globalEnergyGauge: Gauge = Gauge.builder()
+    .name("global_energy")
+    .labelNames("player")
+    .register()
 
 fun updateCounter(world: World, x: Int, y: Int, z: Int, type: String, amount: Double = 1.0) {
     val metric = TrackedMetrics.get(world).getMetrics().find {
@@ -24,7 +29,14 @@ fun updateCounter(world: World, x: Int, y: Int, z: Int, type: String, amount: Do
     TrackedMetrics.setMetricActive(metric)
 }
 
+fun updateGlobalEnergyGauge() {
+    GlobalEnergy.forEach { user, energy ->
+        globalEnergyGauge.labelValues(user.toString()).set(energy.toDouble())
+    }
+}
+
 fun updateMetrics(world: World) {
+    updateGlobalEnergyGauge()
     val metrics = TrackedMetrics.get(world)
     for (metric in metrics.getMetrics()) {
         when (metric.type) {
