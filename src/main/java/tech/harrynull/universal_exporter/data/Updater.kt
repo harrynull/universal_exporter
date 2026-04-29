@@ -86,6 +86,8 @@ fun updateMetrics(world: World) {
                         itemStack.itemStack.displayName
                     } catch (e: Exception) {
                         itemStack.itemStack.unlocalizedName
+                    } catch (e: NoClassDefFoundError) {
+                        itemStack.itemStack.unlocalizedName
                     }
                     itemGauge
                         .labelValues(
