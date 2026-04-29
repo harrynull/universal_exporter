@@ -80,56 +80,59 @@ fun updateMetrics(world: World) {
                         .labelNames("pos", "item", *metric.labels.keys.toTypedArray())
                         .register()
                 }
-                obj.proxy.storage.itemInventory.storageList.forEach { itemStack ->
-                    val count = itemStack.stackSize
-                    val displayName = try {
-                        itemStack.itemStack.displayName
-                    } catch (e: Exception) {
-                        itemStack.itemStack.unlocalizedName
-                    } catch (e: NoClassDefFoundError) {
-                        itemStack.itemStack.unlocalizedName
+                try {
+                    obj.proxy.storage.itemInventory.storageList.forEach { itemStack ->
+                        val count = itemStack.stackSize
+                        val displayName = try {
+                            itemStack.itemStack.displayName
+                        } catch (e: Exception) {
+                            itemStack.itemStack.unlocalizedName
+                        } catch (e: NoClassDefFoundError) {
+                            itemStack.itemStack.unlocalizedName
+                        }
+                        itemGauge
+                            .labelValues(
+                                "${metric.x},${metric.y},${metric.z}",
+                                displayName,
+                                *metric.labels.values.toTypedArray()
+                            )
+                            .set(count.toDouble())
                     }
-                    itemGauge
-                        .labelValues(
+                    val fluidGaugeKey = "${metric.name}_fluids"
+                    val fluidGauge = registeredGauges.getOrPut(fluidGaugeKey) {
+                        Gauge.builder()
+                            .name(fluidGaugeKey)
+                            .help("Number of fluids in AE system")
+                            .labelNames("pos", "fluid", *metric.labels.keys.toTypedArray())
+                            .register()
+                    }
+                    obj.proxy.storage.fluidInventory.storageList.forEach { fluidStack ->
+                        val count = fluidStack.stackSize
+                        fluidGauge
+                            .labelValues(
+                                "${metric.x},${metric.y},${metric.z}",
+                                fluidStack.fluidStack.localizedName,
+                                *metric.labels.values.toTypedArray()
+                            )
+                            .set(count.toDouble())
+                    }
+                    val cpuGaugeKey = "${metric.name}_cpus"
+                    val cpuGauge = registeredGauges.getOrPut(cpuGaugeKey) {
+                        Gauge.builder()
+                            .name(cpuGaugeKey)
+                            .help("AE CPU usage")
+                            .labelNames("pos", "cpu", *metric.labels.keys.toTypedArray())
+                            .register()
+                    }
+                    obj.proxy.crafting.cpus.forEachIndexed { index: Int, cpu ->
+                        cpuGauge.labelValues(
                             "${metric.x},${metric.y},${metric.z}",
-                            displayName,
+                            cpu.name?.takeIf { it.isNotBlank() } ?: "cpu$index",
                             *metric.labels.values.toTypedArray()
-                        )
-                        .set(count.toDouble())
-                }
-                val fluidGaugeKey = "${metric.name}_fluids"
-                val fluidGauge = registeredGauges.getOrPut(fluidGaugeKey) {
-                    Gauge.builder()
-                        .name(fluidGaugeKey)
-                        .help("Number of fluids in AE system")
-                        .labelNames("pos", "fluid", *metric.labels.keys.toTypedArray())
-                        .register()
-                }
-                obj.proxy.storage.fluidInventory.storageList.forEach { fluidStack ->
-                    val count = fluidStack.stackSize
-                    fluidGauge
-                        .labelValues(
-                            "${metric.x},${metric.y},${metric.z}",
-                            fluidStack.fluidStack.localizedName,
-                            *metric.labels.values.toTypedArray()
-                        )
-                        .set(count.toDouble())
-                }
-                val cpuGaugeKey = "${metric.name}_cpus"
-                val cpuGauge = registeredGauges.getOrPut(cpuGaugeKey) {
-                    Gauge.builder()
-                        .name(cpuGaugeKey)
-                        .help("AE CPU usage")
-                        .labelNames("pos", "cpu", *metric.labels.keys.toTypedArray())
-                        .register()
-                }
-
-                obj.proxy.crafting.cpus.forEachIndexed { index: Int, cpu ->
-                    cpuGauge.labelValues(
-                        "${metric.x},${metric.y},${metric.z}",
-                        cpu.name?.takeIf { it.isNotBlank() } ?: "cpu$index",
-                        *metric.labels.values.toTypedArray()
-                    ).set(cpu.remainingItemCount.toDouble())
+                        ).set(cpu.remainingItemCount.toDouble())
+                    }
+                } catch (e: appeng.me.GridAccessException) {
+                    continue
                 }
             }
 
