@@ -82,10 +82,15 @@ fun updateMetrics(world: World) {
                 }
                 obj.proxy.storage.itemInventory.storageList.forEach { itemStack ->
                     val count = itemStack.stackSize
+                    val displayName = try {
+                        itemStack.itemStack.displayName
+                    } catch (e: Exception) {
+                        itemStack.itemStack.unlocalizedName
+                    }
                     itemGauge
                         .labelValues(
                             "${metric.x},${metric.y},${metric.z}",
-                            itemStack.itemStack.displayName,
+                            displayName,
                             *metric.labels.values.toTypedArray()
                         )
                         .set(count.toDouble())
