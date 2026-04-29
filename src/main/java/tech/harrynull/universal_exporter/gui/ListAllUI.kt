@@ -59,7 +59,7 @@ class ListAllUI : IGuiHolder<GuiData> {
                 SyncIDs.ANSWER.id -> {
                     val count = buf!!.readInt()
                     for (i in 0 until count) {
-                        lateinit var firstLine: TextWidget
+                        lateinit var firstLine: TextWidget<*>
                         val metric = TrackedMetric(buf.readNBTTagCompoundFromBuffer()!!)
                         list.child(
                             Flow.column()

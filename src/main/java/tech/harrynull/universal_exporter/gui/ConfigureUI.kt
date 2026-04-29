@@ -7,6 +7,7 @@ import com.cleanroommc.modularui.api.widget.IWidget
 import com.cleanroommc.modularui.screen.ModularPanel
 import com.cleanroommc.modularui.screen.UISettings
 import com.cleanroommc.modularui.theme.WidgetTheme
+import com.cleanroommc.modularui.theme.WidgetThemeEntry
 import com.cleanroommc.modularui.utils.Alignment
 import com.cleanroommc.modularui.utils.Color
 import com.cleanroommc.modularui.value.sync.BooleanSyncValue
@@ -26,7 +27,7 @@ import kotlin.uuid.ExperimentalUuidApi
 class MyList : ListWidget<IWidget, MyList>()
 
 class ClickableWidget<W : ClickableWidget<W>> : ButtonWidget<W>() {
-    override fun getWidgetThemeInternal(theme: ITheme): WidgetTheme? {
+    override fun getWidgetThemeInternal(theme: ITheme): WidgetThemeEntry<*>? {
         return theme.fallback
     }
 }
